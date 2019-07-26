@@ -5,9 +5,9 @@ class Calculator():
     def __init__(self, master):
         self.master = master
 
-        self.expression = ""
         self.equation = StringVar() 
-        self.equation.set(self.expression)
+        self.equation.set("")
+        #self.equation.trace("w", self.validate) #Possibly use trace, need to return corrected version though
 
         vcmd = master.register(self.validate) # we have to wrap the command
         self.expression_field = Entry(master, validate="key", validatecommand=(vcmd, '%d', '%i', '%s', '%S'), textvariable=self.equation)
@@ -98,22 +98,14 @@ class Calculator():
 
     def validate(self, d, i, s, S):
         insertion, index, old_text, new_text = bool(int(d)), int(i), s, S
-        print(not insertion, index, old_text, new_text)
-        #if not new_text: # the field is being cleared
-        #    self.expression = ""
-        #    return True
+        # print(not insertion, index, old_text, new_text) # Debugging
+        
         if insertion:
             allowed_chars = "1234567890()-=+/* ="
             # Insure input is in valid format, including from copy/paste
             for char in new_text:
                 if char not in allowed_chars:
                     return False
-            # Insert at end of expression
-            if index == len(old_text):
-                self.expression += new_text
-            # Value inserted in middle of expression
-            else:
-                self.expression = new_text.join(old_text, new_text)
             return True
         else:
             if old_text[-5:] == " error ":
@@ -124,7 +116,7 @@ class Calculator():
                 self.expression = self.expression[:index] + self.expression[index + len(new_text):]
             return True # Allow deletion of validated text 
         
-        return False
+        return True
 
     # Function to update expressiom 
     # in the text entry box 
