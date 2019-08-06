@@ -1,6 +1,10 @@
 from tkinter import *
+from tkinter import font as font
+from tkinter import ttk
 from re import compile, search
+from verticalScrolledFrame import *
 import decimal
+
 
 class Calculator():
 
@@ -126,12 +130,11 @@ class Calculator():
         self.history_frame.pack(side=RIGHT, fill=BOTH)
         self.clear_history_button = Button(self.history_frame, text='Clear History', fg='black', bg='red', activebackground='green', relief='raised', font=5,
             command=self.clear_history)
-        self.clear_history_button.grid(row=0, column=0, columnspan=2, sticky=W)
-        self.equation_label = Label(self.history_frame, text="Equation:", font=5, borderwidth=5)
-        self.equation_label.grid(row=1, column=0, columnspan=2, sticky=W)
-        self.answer_label = Label(self.history_frame, text="Answer:", font=5, borderwidth=5)
-        self.answer_label.grid(row=1, column=3, columnspan=2, sticky=W)
+        self.clear_history_button.pack(side=TOP, anchor=W)
 
+        self.history_list_frame = VerticalScrolledFrame(self.history_frame, bg='pink')
+        self.history_list_frame.pack(fill=BOTH, expand=1)
+        
     # Validate user input for equation
     # Checks on per character insertion or deletion
     # Allows for multi character insertion or deletion
@@ -169,31 +172,14 @@ class Calculator():
             else: 
                 # evaluate equation and save to variable
                 total_num = eval(equation)
-                if total_num > 9999999999999:
+                if total_num > 999999999999:
                     total = str(format(decimal.Decimal(total_num), '.6e'))
                 else:
                     total = str(total_num)
+                # Add the equation and answer to history list
+                self.add_to_history(equation, total) 
                 self.equation.set("") # Reset equation entry box
-                history_length = len(self.history_buttons)
-                hist_list_len = 5
-                # Add to history, change color to mark as last addition
-                # Equation Button (left)
-                button1 = Button(self.history_frame, text=equation, bg='teal', borderwidth=3, relief='groove', font=5, anchor=E,
-                    command=lambda: self.equation_field.insert(END, equation))
-                button1.grid(row=(history_length%hist_list_len +2), columnspan=2, sticky='WE')
-                # Equal label
-                equal = Label(self.history_frame, text="=", font=5)
-                equal.grid(row=history_length%hist_list_len +2, column=2)
-                # Answer Button (right)
-                button2 = Button(self.history_frame, text=total, bg='teal', borderwidth=3, relief='groove', font=5, anchor=W,
-                    command=lambda: self.equation_field.insert(END, total))
-                button2.grid(row=(history_length%hist_list_len +2), column=3, columnspan=2, sticky='WE')
-                # Add equation and answer to history
-                self.history_buttons.append([button1, equal, button2])
-                # Reset color back to default color
-                if history_length >= 1:
-                    self.history_buttons[history_length-1][0].configure(bg="SystemButtonFace")
-                    self.history_buttons[history_length-1][1].configure(bg="SystemButtonFace")
+                
         # Divide by zero error
         except ZeroDivisionError:
             self.equation.set(" Divide by zero error")
@@ -204,6 +190,38 @@ class Calculator():
         self.equation_field.icursor("end")
     
     
+    # Adds an equation and answer to history list
+    def add_to_history(self, equation, answer):
+        # Frame to hold equation and answer in history
+        history_input_frame = Frame(self.history_list_frame.interior, borderwidth=5, highlightbackground='green', highlightthickness=2)
+        history_input_frame.pack(anchor=E, fill=X, expand=True)
+        # Add to history, change color to mark as last addition
+        #self.history_buttons[-1].Configure(borderwidth=10)
+        if len(self.history_buttons) > 1:
+            self.history_buttons[-2].configure(highlightthickness=0)
+        # Equation Button (left)
+        button1 = Button(history_input_frame, text=equation+'=', relief='flat', anchor=E,
+            command=lambda: self.equation_field.insert(END, equation))
+        button1['font'] = font.Font(family='Helvetica', size=10)
+        button1.pack(side=TOP, anchor=E, fill=X)
+        # Answer Button (right)
+        button2 = Button(history_input_frame, text=answer, relief='flat', anchor=E,
+            command=lambda: self.equation_field.insert(END, answer))
+        button2['font'] = font.Font(family='Helvetica', size=15, weight='bold')
+        button2.pack(side=BOTTOM, anchor=E)
+        # Add equation and answer to history
+        # Inserting new entries at top
+        self.history_buttons.append(history_input_frame)
+        for frame in reversed(self.history_buttons):
+            frame.pack_forget() # Forget frame to re-order
+            frame.pack(anchor=E)
+        
+        #self.history_buttons[-1].Configure(borderwidth=10)
+        if len(self.history_buttons) > 1:
+            self.history_buttons[-2].configure(highlightthickness=0)
+
+        
+                  
     # Function to clear the contents 
     # of text entry box 
     def clear(self): 
@@ -211,13 +229,12 @@ class Calculator():
 
     # Function to clear history of previous answers
     def clear_history(self):
+        hist_list = self.history_list_frame.interior.pack_slaves()
         # Already empty
-        if self.history_buttons == []:
+        if hist_list == None:
             return
-        for but in self.history_buttons:
-            but[0].destroy()
-            but[1].destroy()
-            but[2].destroy()
+        for frame in hist_list:
+            frame.destroy()
         self.history_buttons = []
 
 # create a GUI window 
